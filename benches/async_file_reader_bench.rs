@@ -10,7 +10,7 @@ async fn test_func(){
         // calculate the time cost and throughput
 
         println!("start to generate the test file");
-        const TEST_FILE_SIZE : usize = 10 * 1024 * 1024;
+        const TEST_FILE_SIZE : usize = 100 * 1024 * 1024;
 
         let std_start = std::time::Instant::now();
         let mut file = tokio::fs::File::create("test_file").await.unwrap();
@@ -25,7 +25,7 @@ async fn test_func(){
         println!("std write file cost: {:?}",std_end.duration_since(std_start));
 
         let (tx,rx) = watch::channel(ReadBuf{order:0,buf:vec![],read_size:0});
-        let mut file_reader = AsyncFileReader::new("test_file",1024,tx).await.unwrap();
+        let mut file_reader = AsyncFileReader::new("test_file",1*1024*1024,tx).await.unwrap();
 
         let read_num = 4;
 
@@ -38,6 +38,7 @@ async fn test_func(){
             for _ in 0..read_num {
                 file_reader.send_eof();
             }
+            assert_eq!(file_reader.get_read_size(),TEST_FILE_SIZE);
         });
 
         // create read_num consumers to raed the data from the queue
@@ -53,8 +54,10 @@ async fn test_func(){
                     if read_buf.read_size == 0 {
                         break;
                     }
-                    // read_size += read_buf.read_size;
-                    // order += 1;
+                    // check the data
+                    for i in 0..read_buf.read_size {
+                        assert_eq!(read_buf.buf[i],19);
+                    }
                 }
                 //println!("read_size: {},expected_file_size: {} ",read_size,TEST_FILE_SIZE);
                 //assert_eq!(read_size,TEST_FILE_SIZE);

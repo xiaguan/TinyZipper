@@ -62,6 +62,10 @@ impl AsyncFileReader {
         }
     }
 
+    pub fn get_read_size(&self) -> usize {
+        self.read_size
+    }
+
 }
 
 // add test for the async file reader
